@@ -1,0 +1,142 @@
+# 知识图谱数据库配置
+neo4j:
+  uri: "bolt://localhost:7687"
+  username: "neo4j"
+  password: "password"
+  database: "neo4j"  # Neo4j 5.x+ 支持多数据库
+
+# 业务数据库配置
+source_database:
+  type: "postgresql"  # 支持: postgresql, mysql, oracle
+  host: "localhost"
+  port: 5432
+  database: "business_db"
+  username: "db_user"
+  password: "db_password"
+  # 连接池配置
+  pool_size: 5
+  max_overflow: 10
+
+# LLM 配置
+llm:
+  # 提供商: openai, anthropic, azure_openai, openai_compatible
+  provider: "openai"
+  
+  # OpenAI 配置
+  openai:
+    api_key: "sk-your-api-key-here"
+    model: "gpt-4-turbo-preview"
+    temperature: 0.0  # Text2SQL 任务建议使用 0
+    max_tokens: 2000
+    base_url: null  # 可选：自定义 API 端点（用于 OpenAI Compatible API）
+  
+  # Anthropic 配置
+  anthropic:
+    api_key: "sk-ant-your-api-key"
+    model: "claude-3-sonnet-20240229"
+    temperature: 0.0
+    max_tokens: 4000
+  
+  # Azure OpenAI 配置
+  azure_openai:
+    api_key: "your-azure-key"
+    endpoint: "https://your-resource.openai.azure.com/"
+    deployment_name: "gpt-4"
+    api_version: "2024-02-01"
+  
+  # OpenAI Compatible API 配置（如 vLLM, LocalAI, Ollama 等）
+  openai_compatible:
+    api_key: "sk-dummy-key"  # 某些服务可能不需要真实的 key
+    base_url: "http://localhost:8000/v1"  # API 端点
+    model: "llama-3-8b"  # 模型名称
+    temperature: 0.0
+    max_tokens: 2000
+
+# 实体链接配置
+entity_linking:
+  # Spacy 模型
+  spacy_model: "zh_core_web_sm"  # 中文: zh_core_web_sm, 英文: en_core_web_sm
+  
+  # 关键词提取策略
+  keyword_extraction:
+    method: "hybrid"  # 可选: spacy, regex, hybrid
+    min_keyword_length: 2
+    max_keywords: 10
+  
+  # 实体匹配阈值
+  matching:
+    fuzzy_threshold: 0.85  # 模糊匹配相似度阈值
+    enable_synonym_matching: true
+
+# 图谱查询配置
+graph_query:
+  # Schema 剪枝策略
+  pruning:
+    max_tables: 10  # 最多返回多少张表
+    max_hop_distance: 2  # 图遍历的最大跳数
+    include_related_concepts: true  # 是否包含业务概念节点
+  
+  # 子图检索策略
+  retrieval:
+    strategy: "path_based"  # 可选: path_based, neighborhood, hybrid
+    min_relevance_score: 0.6
+
+# Prompt 工程配置
+prompt:
+  # Few-shot 示例
+  few_shot_examples: 3  # 使用多少个示例
+  
+  # Prompt 模板
+  system_message: |
+    You are a SQL expert. Generate accurate SQL queries based on the provided schema and user question.
+    Always follow these rules:
+    1. Use standard SQL syntax
+    2. Include table aliases for clarity
+    3. Add appropriate WHERE clauses
+    4. Consider NULL handling
+  
+  # 是否包含详细注释
+  include_schema_comments: true
+  include_sample_values: false  # 是否在 Prompt 中包含示例数据值
+
+# 性能优化配置
+performance:
+  # 缓存配置
+  cache:
+    enabled: true
+    ttl: 3600  # 缓存过期时间（秒）
+    max_size: 1000  # 最大缓存条目数
+  
+  # 超时设置
+  timeout:
+    graph_query: 5  # 图查询超时（秒）
+    llm_generation: 30  # LLM 生成超时（秒）
+    sql_execution: 60  # SQL 执行超时（秒）
+
+# 日志配置
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/text2sql.log"
+  max_bytes: 10485760  # 10MB
+  backup_count: 5
+
+# 业务概念配置
+business_concepts:
+  # 概念定义文件路径
+  concept_definitions: "data/concepts.yaml"
+  
+  # 同义词词典
+  synonym_dict: "data/synonyms.yaml"
+  
+  # 是否自动从文档提取概念
+  auto_extraction:
+    enabled: false
+    doc_path: "docs/business/"
+
+# 开发模式配置
+development:
+  debug: false
+  verbose_logging: false
+  save_intermediate_results: true  # 保存中间结果用于调试
+  output_dir: "debug_output/"

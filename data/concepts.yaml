@@ -1,0 +1,129 @@
+# 业务概念定义文件
+# 用于将业务术语映射到数据库字段
+
+concepts:
+  - name: 高价值客户
+    description: 购买金额超过10000元或VIP等级大于3的客户
+    related_tables:
+      - customers
+      - orders
+    related_columns:
+      - table: customers
+        column: vip_level
+      - table: orders
+        column: total_amount
+    synonyms:
+      - VIP客户
+      - 重要客户
+      - 高端客户
+      - 大客户
+    calculation: SUM(total_amount) > 10000 OR vip_level > 3
+
+  - name: 活跃用户
+    description: 最近30天内有登录记录的用户
+    related_tables:
+      - users
+      - login_logs
+    related_columns:
+      - table: users
+        column: last_login_time
+      - table: login_logs
+        column: login_time
+    synonyms:
+      - 活跃客户
+      - 在线用户
+      - 常用用户
+    calculation: last_login_time >= CURRENT_DATE - INTERVAL 30 DAY
+
+  - name: 销售额
+    description: 订单的总金额
+    related_tables:
+      - orders
+      - order_items
+    related_columns:
+      - table: orders
+        column: total_amount
+      - table: order_items
+        column: price
+      - table: order_items
+        column: quantity
+    synonyms:
+      - 营业额
+      - 收入
+      - 交易额
+      - GMV
+    calculation: SUM(total_amount)
+
+  - name: 订单转化率
+    description: 成功支付的订单数占总订单数的比例
+    related_tables:
+      - orders
+    related_columns:
+      - table: orders
+        column: status
+      - table: orders
+        column: order_id
+    synonyms:
+      - 转化率
+      - 支付率
+      - 成交率
+    calculation: COUNT(CASE WHEN status = 'paid' THEN 1 END) / COUNT(*)
+
+  - name: 复购率
+    description: 购买过2次及以上的客户占总客户数的比例
+    related_tables:
+      - customers
+      - orders
+    related_columns:
+      - table: customers
+        column: customer_id
+      - table: orders
+        column: customer_id
+    synonyms:
+      - 回购率
+      - 重复购买率
+    calculation: COUNT(DISTINCT CASE WHEN order_count >= 2 THEN customer_id END) / COUNT(DISTINCT customer_id)
+
+  - name: 客单价
+    description: 平均每个订单的金额
+    related_tables:
+      - orders
+    related_columns:
+      - table: orders
+        column: total_amount
+    synonyms:
+      - 平均订单金额
+      - AOV
+    calculation: AVG(total_amount)
+
+  - name: 新客户
+    description: 首次下单时间在指定时间范围内的客户
+    related_tables:
+      - customers
+      - orders
+    related_columns:
+      - table: customers
+        column: first_order_time
+      - table: customers
+        column: created_at
+    synonyms:
+      - 新用户
+      - 新增客户
+    calculation: first_order_time >= :start_date AND first_order_time <= :end_date
+
+  - name: 库存不足
+    description: 当前库存数量小于安全库存数量的商品
+    related_tables:
+      - products
+      - inventory
+    related_columns:
+      - table: products
+        column: product_id
+      - table: inventory
+        column: quantity
+      - table: inventory
+        column: safe_stock
+    synonyms:
+      - 缺货
+      - 库存预警
+    calculation: quantity < safe_stock
